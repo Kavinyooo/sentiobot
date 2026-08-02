@@ -2,25 +2,27 @@
 #include "motion.h"
 #include "sensors.h"
 #include "trust.h"
+#include "memory.h"
 
-int trust = 80;
-int fearCount = 0;
-
-bool cliffDetected = false;
-bool obstacleDetected = false;
+int robotX = 0;
+int robotY = 0;
 
 void setup()
 {
     Serial.begin(9600);
 
+    // Ultrasonic
     pinMode(TRIG_PIN, OUTPUT);
     pinMode(ECHO_PIN, INPUT);
 
+    // Cliff Sensor
     pinMode(CLIFF_PIN, INPUT);
 
+    // LEDs
     pinMode(GREEN_LED, OUTPUT);
     pinMode(RED_LED, OUTPUT);
 
+    // Motor Driver
     pinMode(IN1, OUTPUT);
     pinMode(IN2, OUTPUT);
     pinMode(IN3, OUTPUT);
@@ -29,24 +31,28 @@ void setup()
     pinMode(ENA, OUTPUT);
     pinMode(ENB, OUTPUT);
 
-    Serial.println("SentioBot Initialized");
+    Serial.println("=================================");
+    Serial.println(" SentioBot Initialized");
+    Serial.println("=================================");
 }
 
 void loop()
 {
-    //---------------------------------
-    // Cliff Detection
-    //---------------------------------
+    //----------------------------------------
+    // CLIFF DETECTION
+    //----------------------------------------
 
-    if(detectCliff())
+    if (detectCliff())
     {
-        Serial.println("CLIFF");
+        Serial.println("CLIFF DETECTED");
+
+        saveCliff(robotX, robotY);
 
         decreaseTrust(25);
 
         stopRobot();
 
-        delay(400);
+        delay(500);
 
         moveBackward();
 
@@ -54,52 +60,83 @@ void loop()
 
         turnLeft();
 
+        robotX--;
+
         return;
     }
 
-    //---------------------------------
-    // Human Detection
-    //---------------------------------
+    //----------------------------------------
+    // HUMAN DETECTION
+    //----------------------------------------
 
-    if(detectHuman())
+    if (detectHuman())
     {
-        Serial.println("Human");
+        Serial.println("Human Detected");
 
         increaseTrust(2);
     }
 
-    //---------------------------------
-    // Obstacle Detection
-    //---------------------------------
+    //----------------------------------------
+    // OBSTACLE DETECTION
+    //----------------------------------------
 
-    else if(detectObstacle())
+    else if (detectObstacle())
     {
-        Serial.println("Obstacle");
+        Serial.println("Obstacle Detected");
+
+        saveObstacle(robotX, robotY);
 
         decreaseTrust(5);
 
         turnRight();
 
+        robotX++;
+
         delay(300);
+
+        return;
     }
 
-    //---------------------------------
-    // Recover Trust
-    //---------------------------------
+    //----------------------------------------
+    // MEMORY CHECK
+    //----------------------------------------
+
+    if (isKnownDanger(robotX, robotY))
+    {
+        Serial.println("Known Dangerous Area");
+
+        turnRight();
+
+        robotX++;
+
+        delay(300);
+
+        return;
+    }
+
+    //----------------------------------------
+    // TRUST RECOVERY
+    //----------------------------------------
 
     recoverTrust();
 
-    //---------------------------------
-    // Behaviour
-    //---------------------------------
+    //----------------------------------------
+    // BEHAVIOR ENGINE
+    //----------------------------------------
 
-    if(getEmotion() == 2)
+    if (getEmotion() == 2)
     {
+        digitalWrite(GREEN_LED, HIGH);
+        digitalWrite(RED_LED, LOW);
+
         moveForward();
     }
 
-    else if(getEmotion() == 1)
+    else if (getEmotion() == 1)
     {
+        digitalWrite(GREEN_LED, HIGH);
+        digitalWrite(RED_LED, HIGH);
+
         moveForward();
 
         delay(150);
@@ -111,6 +148,9 @@ void loop()
 
     else
     {
+        digitalWrite(GREEN_LED, LOW);
+        digitalWrite(RED_LED, HIGH);
+
         moveCircle();
 
         delay(1500);
@@ -120,8 +160,24 @@ void loop()
         delay(1000);
     }
 
+    //----------------------------------------
+    // UPDATE POSITION
+    //----------------------------------------
+
+    robotY++;
+
+    //----------------------------------------
+    // DEBUG OUTPUT
+    //----------------------------------------
+
     Serial.print("Trust : ");
-    Serial.println(getTrust());
+    Serial.print(getTrust());
+
+    Serial.print(" | Position : (");
+    Serial.print(robotX);
+    Serial.print(", ");
+    Serial.print(robotY);
+    Serial.println(")");
 
     delay(50);
 }
