@@ -101,6 +101,8 @@ robopet-emotion-robot/
 ├──sentibot.ino
 ├──include/
 ├── src/
+├── blockdiagram.png
+├──flowchart.png
 ├── README.md
 ├── LICENSE
 └── .gitignore
