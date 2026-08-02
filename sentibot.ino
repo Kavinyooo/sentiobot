@@ -1,6 +1,7 @@
 #include "config.h"
 #include "motion.h"
 #include "sensors.h"
+#include "trust.h"
 
 int trust = 80;
 int fearCount = 0;
@@ -33,13 +34,19 @@ void setup()
 
 void loop()
 {
+    //---------------------------------
+    // Cliff Detection
+    //---------------------------------
+
     if(detectCliff())
     {
-        Serial.println("CLIFF DETECTED");
+        Serial.println("CLIFF");
+
+        decreaseTrust(25);
 
         stopRobot();
 
-        delay(500);
+        delay(400);
 
         moveBackward();
 
@@ -50,17 +57,71 @@ void loop()
         return;
     }
 
+    //---------------------------------
+    // Human Detection
+    //---------------------------------
+
     if(detectHuman())
     {
-        Serial.println("Human Nearby");
+        Serial.println("Human");
+
+        increaseTrust(2);
     }
 
-    if(detectObstacle())
+    //---------------------------------
+    // Obstacle Detection
+    //---------------------------------
+
+    else if(detectObstacle())
     {
         Serial.println("Obstacle");
+
+        decreaseTrust(5);
+
+        turnRight();
+
+        delay(300);
     }
 
-    moveForward();
+    //---------------------------------
+    // Recover Trust
+    //---------------------------------
+
+    recoverTrust();
+
+    //---------------------------------
+    // Behaviour
+    //---------------------------------
+
+    if(getEmotion() == 2)
+    {
+        moveForward();
+    }
+
+    else if(getEmotion() == 1)
+    {
+        moveForward();
+
+        delay(150);
+
+        stopRobot();
+
+        delay(200);
+    }
+
+    else
+    {
+        moveCircle();
+
+        delay(1500);
+
+        stopRobot();
+
+        delay(1000);
+    }
+
+    Serial.print("Trust : ");
+    Serial.println(getTrust());
 
     delay(50);
 }
