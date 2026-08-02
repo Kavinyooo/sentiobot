@@ -98,7 +98,8 @@ Previously recorded hazardous areas are avoided during future navigation cycles.
 
 ```text
 robopet-emotion-robot/
-│
+├──sentibot.ino
+├──include/
 ├── src/
 ├── README.md
 ├── LICENSE
