@@ -100,9 +100,6 @@ Previously recorded hazardous areas are avoided during future navigation cycles.
 robopet-emotion-robot/
 │
 ├── src/
-├── simulation/
-├── docs/
-├── images/
 ├── README.md
 ├── LICENSE
 └── .gitignore
